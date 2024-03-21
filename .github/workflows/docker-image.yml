@@ -35,4 +35,8 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         port: ${{ secrets.SERVER_PORT }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: whoami
+        script: |
+          docker pull sleepyman212/yt-downloader:latest
+          docker stop yt-downloader || true
+          docker rm yt-downloader || true
+          docker run -d --name yt-downloader -p 80:80 sleepyman212/yt-downloader:latest
