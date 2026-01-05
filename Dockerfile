@@ -7,8 +7,8 @@ WORKDIR /app
 # 將當前目錄內容複製到容器中的 /app
 COPY . /app
 
-# 安裝 requirements.txt 中指定的任何需要的包
-RUN pip install --trusted-host pypi.python.org -r requirements.txt
+# 安裝 pyproject.toml 中指定的依賴
+RUN pip install --trusted-host pypi.python.org .
 
 # 讓端口 80 可供此容器外的環境使用
 EXPOSE 80

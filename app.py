@@ -1,8 +1,6 @@
 from flask import Flask, request, send_from_directory, abort
 import os
 from itsdangerous import URLSafeTimedSerializer
-from pytube import YouTube
-from moviepy.editor import AudioFileClip
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'test'
@@ -10,6 +8,9 @@ app.config['DOWNLOAD_FOLDER'] = 'downloads' # 確保這個目錄存在且應用�
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 def download_video_as_mp3(youtube_url, destination_folder):
+    from pytube import YouTube
+    from moviepy.editor import AudioFileClip
+
     video = YouTube(youtube_url)
     stream = video.streams.filter(only_audio=True).first()
     downloaded_file = stream.download(output_path=destination_folder)
