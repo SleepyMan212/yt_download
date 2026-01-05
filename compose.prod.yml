@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  yt-downloader:
+    image: sleepyman212/yt-downloader:${IMAGE_TAG}
+    container_name: yt-downloader
+    ports:
+      - "80:80"
+    environment:
+      PORT: "80"
+    volumes:
+      - downloads:/app/downloads
+    restart: unless-stopped
+
+volumes:
+  downloads:

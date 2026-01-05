@@ -18,11 +18,11 @@ curl http://localhost:8080/healthz
 正式執行（prod，使用 gunicorn，port 在 `80`，拉遠端 image）：
 
 ```bash
-docker compose --profile prod up -d
+IMAGE_TAG=latest docker compose -f compose.prod.yml up -d
 curl http://localhost/healthz
 ```
 
-部署時（GitHub Actions）會用 `compose.yml` 的 `prod` profile，並設定 `IMAGE_TAG=sha-<commit>` 來拉取對應版本的 image（不依賴 `latest`）。
+部署時（GitHub Actions）會用 `compose.prod.yml`，並設定 `IMAGE_TAG=sha-<commit>` 來拉取對應版本的 image（不依賴 `latest`）。如果 server 沒有 `docker compose`（v2 plugin），也會自動改用 `docker-compose`（v1）。
 
 停止：
 
