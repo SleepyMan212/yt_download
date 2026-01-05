@@ -20,6 +20,9 @@ def test_request_download_returns_token(client, monkeypatch, tmp_path):
     filename = yt_app.serializer.loads(payload["token"], salt="file-download", max_age=60 * 60)
     assert filename == "x.mp3"
 
+    health = client.get("/healthz")
+    assert health.status_code == 200
+
 
 def test_request_download_missing_url_is_400(client):
     res = client.post("/request_download", json={})
