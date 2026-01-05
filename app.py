@@ -1,5 +1,8 @@
 from flask import Flask, request, send_from_directory, abort
 import os
+import subprocess
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 from itsdangerous import URLSafeTimedSerializer
 
 app = Flask(__name__)
@@ -10,21 +13,56 @@ serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 def ensure_download_folder():
     os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
 
-def download_video_as_mp3(youtube_url, destination_folder):
-    from pytube import YouTube
-    from moviepy.editor import AudioFileClip
+def normalize_youtube_url(url: str) -> str:
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
 
-    video = YouTube(youtube_url)
-    stream = video.streams.filter(only_audio=True).first()
-    os.makedirs(destination_folder, exist_ok=True)
-    downloaded_file = stream.download(output_path=destination_folder)
-    base, _ = os.path.splitext(downloaded_file)
-    mp3_filename = os.path.basename(base) + ".mp3"
-    mp3_filepath = os.path.join(destination_folder, mp3_filename)
-    video_clip = AudioFileClip(downloaded_file)
-    video_clip.write_audiofile(mp3_filepath)
-    os.remove(downloaded_file) # 刪除原始下載的視頻檔案
-    return mp3_filename
+    video_id = None
+
+    if host in {"youtu.be"}:
+        candidate = parsed.path.lstrip("/").split("/", 1)[0]
+        video_id = candidate or None
+    elif host.endswith("youtube.com"):
+        if parsed.path == "/watch":
+            query = parse_qs(parsed.query)
+            values = query.get("v") or []
+            video_id = values[0] if values else None
+        elif parsed.path.startswith("/shorts/"):
+            candidate = parsed.path.split("/", 3)[2]
+            video_id = candidate or None
+
+    if not video_id:
+        return url
+
+    return f"https://www.youtube.com/watch?v={video_id}"
+
+def download_video_as_mp3(youtube_url, destination_folder):
+    youtube_url = normalize_youtube_url(youtube_url)
+    destination = Path(destination_folder)
+    destination.mkdir(parents=True, exist_ok=True)
+
+    output_template = str(destination / "%(id)s.%(ext)s")
+
+    cmd = [
+        "yt-dlp",
+        "--no-playlist",
+        "-x",
+        "--audio-format",
+        "mp3",
+        "-o",
+        output_template,
+        youtube_url,
+    ]
+
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or proc.stdout.strip() or "yt-dlp failed")
+
+    mp3_files = sorted(destination.glob("*.mp3"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not mp3_files:
+        raise RuntimeError("yt-dlp succeeded but no mp3 produced")
+
+    return mp3_files[0].name
 
 @app.get("/healthz")
 def healthz():
@@ -58,4 +96,8 @@ def download(token):
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", "80"))
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
-    app.run(host="0.0.0.0", port=port, debug=debug, use_reloader=False)
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=debug,
+    )

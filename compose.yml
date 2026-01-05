@@ -1,0 +1,30 @@
+services:
+  yt-downloader-prod:
+    profiles: ["prod"]
+    image: sleepyman212/yt-downloader:${IMAGE_TAG:-latest}
+    container_name: yt-downloader
+    ports:
+      - "80:80"
+    environment:
+      PORT: "80"
+    volumes:
+      - downloads:/app/downloads
+    restart: unless-stopped
+
+  yt-downloader-dev:
+    profiles: ["dev"]
+    build: .
+    image: yt-downloader:dev
+    container_name: yt-downloader-dev
+    ports:
+      - "8080:80"
+    environment:
+      PORT: "80"
+      FLASK_DEBUG: "1"
+    command: ["python", "app.py"]
+    volumes:
+      - ./:/app
+      - downloads:/app/downloads
+
+volumes:
+  downloads:

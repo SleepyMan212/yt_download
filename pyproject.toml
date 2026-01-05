@@ -9,9 +9,9 @@ description = "Demo YouTube-to-MP3 downloader (CI/CD learning repo)"
 requires-python = ">=3.8"
 dependencies = [
   "Flask==2.2.2",
-  "moviepy==1.0.3",
-  "pytube==15.0.0",
+  "gunicorn>=21",
   "Werkzeug==2.2.2",
+  "yt-dlp>=2024.10.7",
 ]
 
 [project.optional-dependencies]

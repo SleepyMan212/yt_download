@@ -4,7 +4,7 @@ FROM python:3.10-slim
 # 設定工作目錄為 /app
 WORKDIR /app
 
-# moviepy 需要 ffmpeg 進行轉檔
+# yt-dlp 需要 ffmpeg 進行音訊抽取/轉檔
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ffmpeg \
   && rm -rf /var/lib/apt/lists/*
@@ -18,8 +18,6 @@ RUN pip install --trusted-host pypi.python.org --no-cache-dir .
 # 讓端口 80 可供此容器外的環境使用
 EXPOSE 80
 
-# 定義環境變量
-ENV NAME World
-
-# 運行 app.py 當容器啟動
-CMD ["python", "app.py"]
+# Production: 用 gunicorn 跑 Flask app（不要用 Flask 內建開發伺服器）
+ENV PORT=80
+CMD ["sh", "-c", "exec gunicorn -b 0.0.0.0:${PORT} app:app"]
